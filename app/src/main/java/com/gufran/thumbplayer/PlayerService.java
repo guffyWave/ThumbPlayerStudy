@@ -4,7 +4,6 @@ import android.app.Service;
 import android.content.Intent;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
-import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
 import android.widget.Toast;
@@ -31,6 +30,8 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
     MediaPlayer mPlayer = null;
     static PlayerService.State mState = State.Preparing;
     String currentlyPlayedURL = "";
+
+    ThumbPlayerView thumbPlayerView;
 
     //Actions
     public static final String ACTION_TOGGLE_PLAYBACK = BuildConfig.APPLICATION_ID + ".musicplayer.action.TOGGLE_PLAYBACK";
@@ -90,6 +91,7 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
             mPlayer.setDataSource(manualUrl);
             mState = PlayerService.State.Preparing;
             mPlayer.prepareAsync();
+            if (thumbPlayerView != null) thumbPlayerView.setProgress(50);
         } catch (IOException ex) {
             Log.e(TAG, "IOException playing URL: " + ex.getMessage());
             ex.printStackTrace();
@@ -110,6 +112,7 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
             mPlayer.reset();
             mPlayer.release();
             mPlayer = null;
+            if (thumbPlayerView != null) thumbPlayerView.setProgress(0);
         }
         // we can also release the Wifi lock, if we're holding it
         //   if (mWifiLock.isHeld()) mWifiLock.release();
@@ -126,6 +129,7 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
         mState = PlayerService.State.Playing;
         mPlayer.setVolume(1.0f, 1.0f); // up the vol to max
         if (!mPlayer.isPlaying()) mPlayer.start();
+        if (thumbPlayerView != null) thumbPlayerView.setProgress(100);
     }
 
     @Override
@@ -142,12 +146,15 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
     public void onDestroy() {
         mState = PlayerService.State.Stopped;
         relaxResources(true);
+        if (thumbPlayerView != null) thumbPlayerView.setProgress(0);
     }
 
+    public void setThumbPlayerView(ThumbPlayerView thumbPlayerView) {
+        this.thumbPlayerView = thumbPlayerView;
+    }
 
     @Override
     public IBinder onBind(Intent intent) {
         return null;
     }
-
 }

@@ -14,7 +14,7 @@
         app:icon_stop="@mipmap/ic_launcher"
         app:playerDisabledColor="@android:color/darker_gray"
         app:playerPrimaryColor="#ff0000"
-        app:progress="60"
+        app:progress="0"
         app:strokeWidth="5dp" />
 
     <com.gufran.thumbplayer.ThumbPlayerView
@@ -25,7 +25,7 @@
         app:icon_stop="@mipmap/ic_launcher"
         app:playerDisabledColor="@android:color/darker_gray"
         app:playerPrimaryColor="#ff0000"
-        app:progress="10"
+        app:progress="0"
         app:strokeWidth="5dp" />
 
 </LinearLayout>
