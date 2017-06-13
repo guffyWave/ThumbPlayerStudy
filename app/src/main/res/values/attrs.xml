@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="ThumbPlayerView">
+        <attr name="playerPrimaryColor" format="color" />
+        <attr name="playerDisabledColor" format="color" />
+        <attr name="strokeWidth" format="dimension" />
+        <attr name="progress" format="integer" />
+        <attr name="icon_play" format="integer" />
+        <attr name="icon_stop" format="integer" />
+    </declare-styleable>
+</resources>
