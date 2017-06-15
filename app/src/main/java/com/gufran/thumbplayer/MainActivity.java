@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 
@@ -13,8 +14,8 @@ import com.squareup.otto.Subscribe;
 
 public class MainActivity extends AppCompatActivity {
     ThumbPlayerView thumbPlayerView, thumbPlayerView2;
-    String url1 = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3";
-    String url2 = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3";
+    String url1 = "https://sampleswap.org/samples-ghost/MELODIC%20SAMPLES%20and%20LOOPS/GUITARS%20etcetera/969[kb]anthem-5ths.aif.mp3";
+    String url2 = "https://sampleswap.org/samples-ghost/MELODIC%20SAMPLES%20and%20LOOPS/guitar%20acoustic%20picking/2070[kb]120_acoustic-guitar-picking2.aif.mp3";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,6 +34,7 @@ public class MainActivity extends AppCompatActivity {
                 Uri uri = Uri.parse(url1);
                 i.setData(uri);
                 startService(i);
+
             }
         });
         thumbPlayerView2.setOnClickListener(new View.OnClickListener() {
@@ -45,7 +47,6 @@ public class MainActivity extends AppCompatActivity {
                 startService(i);
             }
         });
-
     }
 
     @Subscribe
@@ -53,22 +54,24 @@ public class MainActivity extends AppCompatActivity {
 
         if (playerUpdateEvent.playedURL.equals(url1)) {// first view
             if (playerUpdateEvent.action.equals(PlayerService.BROADCAST_ACTION_PREPARING)) {
-                thumbPlayerView.setProgress(33);
+                thumbPlayerView.setState(ThumbPlayerView.STATE_PREPARING);
             } else if (playerUpdateEvent.action.equals(PlayerService.BROADCAST_ACTION_PLAYING)) {
-                thumbPlayerView.setProgress(100);
+                thumbPlayerView.setState(ThumbPlayerView.STATE_PLAYING);
+                thumbPlayerView.setProgress(playerUpdateEvent.progress);
             } else {
-                thumbPlayerView.setProgress(0);
+                thumbPlayerView.setState(ThumbPlayerView.STATE_STOPPED);
             }
         }
 
 
         if (playerUpdateEvent.playedURL.equals(url2)) {// second view
             if (playerUpdateEvent.action.equals(PlayerService.BROADCAST_ACTION_PREPARING)) {
-                thumbPlayerView2.setProgress(33);
+                thumbPlayerView2.setState(ThumbPlayerView.STATE_PREPARING);
             } else if (playerUpdateEvent.action.equals(PlayerService.BROADCAST_ACTION_PLAYING)) {
-                thumbPlayerView2.setProgress(100);
+                thumbPlayerView2.setState(ThumbPlayerView.STATE_PLAYING);
+                thumbPlayerView2.setProgress(playerUpdateEvent.progress);
             } else {
-                thumbPlayerView2.setProgress(0);
+                thumbPlayerView2.setState(ThumbPlayerView.STATE_STOPPED);
             }
         }
 

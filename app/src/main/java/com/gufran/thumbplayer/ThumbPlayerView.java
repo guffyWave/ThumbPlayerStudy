@@ -6,6 +6,8 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
+import android.icu.text.RuleBasedCollator;
+import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.View;
@@ -29,6 +31,20 @@ public class ThumbPlayerView extends View {
     private int progress = 0;
     private int max = 100;
     private Drawable iconPlayDrawable, iconStopDrawable;
+
+    public static final int STATE_PREPARING = 0;
+    public static final int STATE_PLAYING = 1;
+    public static final int STATE_STOPPED = 2;
+
+    public int state = STATE_STOPPED;
+
+
+    ///loading progress
+    private int animatingProgress = 0;
+    private Handler animatingProgressHandler;
+    private Runnable animatingProgressRunnable;
+    private int ANIMATION_PROGRESS_DELAY = 35;
+
 
     public ThumbPlayerView(Context context) {
         this(context, null);
@@ -59,8 +75,17 @@ public class ThumbPlayerView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        drawOutline(canvas);
-        drawDrawableAtCenter(canvas, iconPlayDrawable);
+        if (state == STATE_PREPARING) {
+            setProgress(0);
+            drawAnimatingOutline(canvas);
+        } else if (state == STATE_PLAYING) {
+            drawOutline(canvas);
+            drawDrawableAtCenter(canvas, iconStopDrawable);
+        } else if (state == STATE_STOPPED) {
+            setProgress(0);
+            drawOutline(canvas);
+            drawDrawableAtCenter(canvas, iconPlayDrawable);
+        }
     }
 
     private void drawOutline(Canvas canvas) {
@@ -75,6 +100,22 @@ public class ThumbPlayerView extends View {
                 height - delta);
         canvas.drawArc(finishedOuterRect, -90, getProgressAngle(), false, finishedPaint);
         canvas.drawArc(unfinishedOuterRect, -90 + getProgressAngle(), 360 - getProgressAngle(), false, unfinishedPaint);
+    }
+
+    private void drawAnimatingOutline(Canvas canvas) {
+        int arcAngle = 0; //30 degrees
+        float delta = (float) (0.05 * height);
+        finishedOuterRect.set(delta,
+                delta,
+                width - delta,
+                height - delta);
+        unfinishedOuterRect.set(delta,
+                delta,
+                width - delta,
+                height - delta);
+
+        canvas.drawArc(unfinishedOuterRect, 0, 360, false, unfinishedPaint);
+        canvas.drawArc(finishedOuterRect, animatingProgress, arcAngle + animatingProgress, false, finishedPaint);
     }
 
     private void drawDrawableAtCenter(Canvas canvas, Drawable drawable) {
@@ -135,5 +176,44 @@ public class ThumbPlayerView extends View {
         unfinishedPaint.setAntiAlias(true);
     }
 
+    public void startProgressAnimation() {
 
+        animatingProgressHandler = new Handler();
+        animatingProgressRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (animatingProgress >= 360)
+                    animatingProgress = 0;
+
+                animatingProgress += 5;
+                animatingProgressHandler.postDelayed(this, ANIMATION_PROGRESS_DELAY);
+                invalidate();
+            }
+        };
+        animatingProgressHandler.post(animatingProgressRunnable);
+    }
+
+    private void stopProgressAnimation() {
+        if (animatingProgressHandler != null && animatingProgressRunnable != null) {
+            animatingProgress = 0;
+            animatingProgressHandler.removeCallbacks(animatingProgressRunnable);
+            invalidate();
+        }
+    }
+
+    public void setState(int state) {
+        this.state = state;
+        switch (state) {
+            case STATE_PREPARING:
+                startProgressAnimation();
+                break;
+            case STATE_PLAYING:
+                stopProgressAnimation();
+                break;
+            case STATE_STOPPED:
+                stopProgressAnimation();
+                break;
+        }
+        invalidate();
+    }
 }

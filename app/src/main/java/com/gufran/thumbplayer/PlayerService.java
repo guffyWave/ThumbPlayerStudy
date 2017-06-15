@@ -4,6 +4,7 @@ import android.app.Service;
 import android.content.Intent;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
 import android.widget.Toast;
@@ -44,6 +45,11 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
     public static final String BROADCAST_ACTION_PLAYING = BuildConfig.APPLICATION_ID + ".musicplayer.broadcastaction.BROADCAST_ACTION_PLAYING";
     public static final String BROADCAST_ACTION_STOPPED = BuildConfig.APPLICATION_ID + ".musicplayer.broadcastaction.BROADCAST_ACTION_STOPPED";
 
+
+    //track duration
+    Handler trackDurationHandler;
+    Runnable trackDurationRunnable;
+
     void createMediaPlayerIfNeeded() {
         if (mPlayer == null) {
             mPlayer = new MediaPlayer();
@@ -54,7 +60,6 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
         } else
             mPlayer.reset();
     }
-
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -126,7 +131,7 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
 
     @Override
     public void onCompletion(MediaPlayer mp) {
-        playStream(null);
+        stopPlayerService(currentlyPlayedURL);
     }
 
     @Override
@@ -136,6 +141,8 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
         if (!mPlayer.isPlaying()) mPlayer.start();
         ThumbPlayerApp.eventBus.post(new PlayerUpdateEvent(BROADCAST_ACTION_PLAYING
                 , 0, currentlyPlayedURL));
+        publishTrackDuration();
+
     }
 
     @Override
@@ -161,14 +168,27 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
 
         ThumbPlayerApp.eventBus.post(new PlayerUpdateEvent(BROADCAST_ACTION_STOPPED
                 , 0, stoppedURL));
+
+        if (trackDurationHandler != null && trackDurationRunnable != null) {
+            trackDurationHandler.removeCallbacks(trackDurationRunnable);
+        }
     }
 
-//    private void broadcastStatus(String BROADCAST_ACTION) {
-//        Intent intent = new Intent();
-//        intent.setAction(BROADCAST_ACTION);
-//        intent.putExtra("PLAYED_MEDIA_URL", currentlyPlayedURL);
-//        sendBroadcast(intent);
-//    }
+    private void publishTrackDuration() {
+        trackDurationHandler = new Handler();
+        trackDurationRunnable = new Runnable() {
+            @Override
+            public void run() {
+                //Log.d(TAG, "onPrepared: getCurrentPosition : " + mPlayer.getCurrentPosition()+" / "+ mPlayer.getDuration() );
+                //Log.d(TAG, "run: progressPercent " + progressPercent);
+                int progressPercent = ((mPlayer.getCurrentPosition() * 100) / mPlayer.getDuration());
+                ThumbPlayerApp.eventBus.post(new PlayerUpdateEvent(BROADCAST_ACTION_PLAYING
+                        , progressPercent, currentlyPlayedURL));
+                trackDurationHandler.postDelayed(this, 500);
+            }
+        };
+        trackDurationHandler.post(trackDurationRunnable);
+    }
 
 
     @Override
