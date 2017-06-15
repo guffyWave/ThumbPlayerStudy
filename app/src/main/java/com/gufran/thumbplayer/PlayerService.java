@@ -8,6 +8,8 @@ import android.os.IBinder;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.gufran.thumbplayer.event.PlayerUpdateEvent;
+
 import java.io.IOException;
 
 /**
@@ -30,14 +32,17 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
     MediaPlayer mPlayer = null;
     static PlayerService.State mState = State.Preparing;
     String currentlyPlayedURL = "";
-
-    ThumbPlayerView thumbPlayerView;
+    String previouslyPlayedURL = "";
 
     //Actions
     public static final String ACTION_TOGGLE_PLAYBACK = BuildConfig.APPLICATION_ID + ".musicplayer.action.TOGGLE_PLAYBACK";
     public static final String ACTION_PLAY = BuildConfig.APPLICATION_ID + ".musicplayer.action.PLAY";
     public static final String ACTION_STOP = BuildConfig.APPLICATION_ID + ".musicplayer.action.STOP";
 
+    //Broadcast Actions
+    public static final String BROADCAST_ACTION_PREPARING = BuildConfig.APPLICATION_ID + ".musicplayer.broadcastaction.BROADCAST_ACTION_PREPARING";
+    public static final String BROADCAST_ACTION_PLAYING = BuildConfig.APPLICATION_ID + ".musicplayer.broadcastaction.BROADCAST_ACTION_PLAYING";
+    public static final String BROADCAST_ACTION_STOPPED = BuildConfig.APPLICATION_ID + ".musicplayer.broadcastaction.BROADCAST_ACTION_STOPPED";
 
     void createMediaPlayerIfNeeded() {
         if (mPlayer == null) {
@@ -66,15 +71,18 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
                 currentlyPlayedURL = requestedURL;
                 processPlayRequest(currentlyPlayedURL);
             }
-        } else if (action.equals(ACTION_STOP)) processStopRequest();
+        } else if (action.equals(ACTION_STOP)) {
+            currentlyPlayedURL = requestedURL;
+            processStopRequest(currentlyPlayedURL);
+        }
         return START_NOT_STICKY;
     }
 
-    void processTogglePlaybackRequest(String urlToPlay) {
+    void processTogglePlaybackRequest(String url) {
         if (mState == State.Stopped || mState == State.Preparing) {
-            processPlayRequest(urlToPlay);
+            processPlayRequest(url);
         } else {
-            processStopRequest();
+            processStopRequest(url);
         }
     }
 
@@ -83,25 +91,24 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
     }
 
     void playStream(String manualUrl) {
-        mState = PlayerService.State.Stopped;
-        relaxResources(false); // release everything except MediaPlayer
+        stopPlayerService(manualUrl);
         try {
             createMediaPlayerIfNeeded();
             mPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
             mPlayer.setDataSource(manualUrl);
             mState = PlayerService.State.Preparing;
             mPlayer.prepareAsync();
-            if (thumbPlayerView != null) thumbPlayerView.setProgress(50);
+            ThumbPlayerApp.eventBus.post(new PlayerUpdateEvent(BROADCAST_ACTION_PREPARING
+                    , 0, currentlyPlayedURL));
         } catch (IOException ex) {
             Log.e(TAG, "IOException playing URL: " + ex.getMessage());
             ex.printStackTrace();
         }
     }
 
-    void processStopRequest() {
+    void processStopRequest(String url) {
         if (mState == PlayerService.State.Playing) {
-            mState = PlayerService.State.Stopped;
-            relaxResources(true);
+            stopPlayerService(url);
             stopSelf();
         }
     }
@@ -112,12 +119,10 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
             mPlayer.reset();
             mPlayer.release();
             mPlayer = null;
-            if (thumbPlayerView != null) thumbPlayerView.setProgress(0);
         }
         // we can also release the Wifi lock, if we're holding it
         //   if (mWifiLock.isHeld()) mWifiLock.release();
     }
-
 
     @Override
     public void onCompletion(MediaPlayer mp) {
@@ -129,7 +134,8 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
         mState = PlayerService.State.Playing;
         mPlayer.setVolume(1.0f, 1.0f); // up the vol to max
         if (!mPlayer.isPlaying()) mPlayer.start();
-        if (thumbPlayerView != null) thumbPlayerView.setProgress(100);
+        ThumbPlayerApp.eventBus.post(new PlayerUpdateEvent(BROADCAST_ACTION_PLAYING
+                , 0, currentlyPlayedURL));
     }
 
     @Override
@@ -137,21 +143,33 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
         Toast.makeText(getApplicationContext(), "Media mPlayer error! Resetting.",
                 Toast.LENGTH_SHORT).show();
         Log.e(TAG, "Error: what=" + String.valueOf(what) + ", extra=" + String.valueOf(extra));
-        mState = PlayerService.State.Stopped;
-        relaxResources(true);
+        stopPlayerService(currentlyPlayedURL);
         return true; // we handled the error
     }
 
     @Override
     public void onDestroy() {
-        mState = PlayerService.State.Stopped;
-        relaxResources(true);
-        if (thumbPlayerView != null) thumbPlayerView.setProgress(0);
+        stopPlayerService(currentlyPlayedURL);
     }
 
-    public void setThumbPlayerView(ThumbPlayerView thumbPlayerView) {
-        this.thumbPlayerView = thumbPlayerView;
+
+    private void stopPlayerService(String stoppedURL) {
+        mState = PlayerService.State.Stopped;
+        relaxResources(true);// release everything except MediaPlayer
+
+        System.out.println(stoppedURL);
+
+        ThumbPlayerApp.eventBus.post(new PlayerUpdateEvent(BROADCAST_ACTION_STOPPED
+                , 0, stoppedURL));
     }
+
+//    private void broadcastStatus(String BROADCAST_ACTION) {
+//        Intent intent = new Intent();
+//        intent.setAction(BROADCAST_ACTION);
+//        intent.putExtra("PLAYED_MEDIA_URL", currentlyPlayedURL);
+//        sendBroadcast(intent);
+//    }
+
 
     @Override
     public IBinder onBind(Intent intent) {
