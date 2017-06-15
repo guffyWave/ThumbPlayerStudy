@@ -13,10 +13,12 @@ public class PlayerUpdateEvent {
     public String action;
     public int progress;
     public String playedURL;
+    public int position;
 
-    public PlayerUpdateEvent(String action, int progress, String playedURL) {
+    public PlayerUpdateEvent(String action, int progress, String playedURL, int position) {
         this.action = action;
         this.progress = progress;
         this.playedURL = playedURL;
+        this.position = position;
     }
 }

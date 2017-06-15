@@ -33,6 +33,7 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
     MediaPlayer mPlayer = null;
     static PlayerService.State mState = State.Preparing;
     String currentlyPlayedURL = "";
+    int position;//the position in listview
 
     //Actions
     public static final String ACTION_TOGGLE_PLAYBACK = BuildConfig.APPLICATION_ID + ".musicplayer.action.TOGGLE_PLAYBACK";
@@ -62,6 +63,7 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        position = intent.getIntExtra("POSITION", 0);
         String action = intent.getAction();
         String requestedURL = intent.getData().toString();
         if (action.equals(ACTION_PLAY)) {
@@ -95,7 +97,7 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
     }
 
     void playStream(String manualUrl) {
-     //   stopPlayerService(manualUrl);
+        //   stopPlayerService(manualUrl);
         try {
             createMediaPlayerIfNeeded();
             mPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
@@ -103,7 +105,7 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
             mState = PlayerService.State.Preparing;
             mPlayer.prepareAsync();
             ThumbPlayerApp.eventBus.post(new PlayerUpdateEvent(BROADCAST_ACTION_PREPARING
-                    , 0, currentlyPlayedURL));
+                    , 0, currentlyPlayedURL,position));
         } catch (IOException ex) {
             Log.e(TAG, "IOException playing URL: " + ex.getMessage());
             ex.printStackTrace();
@@ -139,7 +141,7 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
         mPlayer.setVolume(1.0f, 1.0f); // up the vol to max
         if (!mPlayer.isPlaying()) mPlayer.start();
         ThumbPlayerApp.eventBus.post(new PlayerUpdateEvent(BROADCAST_ACTION_PLAYING
-                , 0, currentlyPlayedURL));
+                , 0, currentlyPlayedURL,position));
         publishTrackDuration();
     }
 
@@ -149,16 +151,16 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
                 Toast.LENGTH_LONG).show();
         Log.e(TAG, "Error: what=" + String.valueOf(what) + ", extra=" + String.valueOf(extra));
         ThumbPlayerApp.eventBus.post(new PlayerUpdateEvent(BROADCAST_ACTION_ERROR
-                , 0, currentlyPlayedURL));
+                , 0, currentlyPlayedURL,position));
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
                 stopPlayerService(currentlyPlayedURL);
             }
-        },3000);//stop after 3 seconds
+        }, 3000);//stop after 3 seconds
 
         return true; // we handled the error
-}
+    }
 
     @Override
     public void onDestroy() {
@@ -173,7 +175,7 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
         //System.out.println(stoppedURL);
 
         ThumbPlayerApp.eventBus.post(new PlayerUpdateEvent(BROADCAST_ACTION_STOPPED
-                , 0, stoppedURL));
+                , 0, stoppedURL,position));
 
         if (trackDurationHandler != null && trackDurationRunnable != null) {
             trackDurationHandler.removeCallbacks(trackDurationRunnable);
@@ -189,7 +191,7 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
                 //Log.d(TAG, "run: progressPercent " + progressPercent);
                 int progressPercent = ((mPlayer.getCurrentPosition() * 100) / mPlayer.getDuration());
                 ThumbPlayerApp.eventBus.post(new PlayerUpdateEvent(BROADCAST_ACTION_PLAYING
-                        , progressPercent, currentlyPlayedURL));
+                        , progressPercent, currentlyPlayedURL,position));
                 trackDurationHandler.postDelayed(this, 500);
             }
         };
