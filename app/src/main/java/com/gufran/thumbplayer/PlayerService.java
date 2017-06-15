@@ -33,7 +33,6 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
     MediaPlayer mPlayer = null;
     static PlayerService.State mState = State.Preparing;
     String currentlyPlayedURL = "";
-    String previouslyPlayedURL = "";
 
     //Actions
     public static final String ACTION_TOGGLE_PLAYBACK = BuildConfig.APPLICATION_ID + ".musicplayer.action.TOGGLE_PLAYBACK";
@@ -44,7 +43,7 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
     public static final String BROADCAST_ACTION_PREPARING = BuildConfig.APPLICATION_ID + ".musicplayer.broadcastaction.BROADCAST_ACTION_PREPARING";
     public static final String BROADCAST_ACTION_PLAYING = BuildConfig.APPLICATION_ID + ".musicplayer.broadcastaction.BROADCAST_ACTION_PLAYING";
     public static final String BROADCAST_ACTION_STOPPED = BuildConfig.APPLICATION_ID + ".musicplayer.broadcastaction.BROADCAST_ACTION_STOPPED";
-
+    public static final String BROADCAST_ACTION_ERROR = BuildConfig.APPLICATION_ID + ".musicplayer.broadcastaction.BROADCAST_ACTION_ERROR";
 
     //track duration
     Handler trackDurationHandler;
@@ -96,7 +95,7 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
     }
 
     void playStream(String manualUrl) {
-        stopPlayerService(manualUrl);
+     //   stopPlayerService(manualUrl);
         try {
             createMediaPlayerIfNeeded();
             mPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
@@ -142,17 +141,24 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
         ThumbPlayerApp.eventBus.post(new PlayerUpdateEvent(BROADCAST_ACTION_PLAYING
                 , 0, currentlyPlayedURL));
         publishTrackDuration();
-
     }
 
     @Override
     public boolean onError(MediaPlayer mp, int what, int extra) {
-        Toast.makeText(getApplicationContext(), "Media mPlayer error! Resetting.",
-                Toast.LENGTH_SHORT).show();
+        Toast.makeText(getApplicationContext(), "Can't play sound. Please  try again.",
+                Toast.LENGTH_LONG).show();
         Log.e(TAG, "Error: what=" + String.valueOf(what) + ", extra=" + String.valueOf(extra));
-        stopPlayerService(currentlyPlayedURL);
+        ThumbPlayerApp.eventBus.post(new PlayerUpdateEvent(BROADCAST_ACTION_ERROR
+                , 0, currentlyPlayedURL));
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                stopPlayerService(currentlyPlayedURL);
+            }
+        },3000);//stop after 3 seconds
+
         return true; // we handled the error
-    }
+}
 
     @Override
     public void onDestroy() {

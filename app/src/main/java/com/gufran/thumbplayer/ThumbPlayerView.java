@@ -30,11 +30,13 @@ public class ThumbPlayerView extends View {
     private int height, width;
     private int progress = 0;
     private int max = 100;
-    private Drawable iconPlayDrawable, iconStopDrawable;
+    private Drawable iconPlayDrawable, iconStopDrawable,iconErrorDrawable;
 
     public static final int STATE_PREPARING = 0;
     public static final int STATE_PLAYING = 1;
     public static final int STATE_STOPPED = 2;
+    public static final int STATE_ERROR = 3;
+
 
     public int state = STATE_STOPPED;
 
@@ -66,6 +68,8 @@ public class ThumbPlayerView extends View {
                 .getDrawable(R.styleable.ThumbPlayerView_icon_play);
         iconStopDrawable = typedArray
                 .getDrawable(R.styleable.ThumbPlayerView_icon_stop);
+        iconErrorDrawable= typedArray
+                .getDrawable(R.styleable.ThumbPlayerView_icon_error);
         strokeWidth = typedArray.getDimensionPixelSize(R.styleable.ThumbPlayerView_strokeWidth, 10);
         setMax(100);
         initPainters();
@@ -85,6 +89,10 @@ public class ThumbPlayerView extends View {
             setProgress(0);
             drawOutline(canvas);
             drawDrawableAtCenter(canvas, iconPlayDrawable);
+        }else{
+            setProgress(0);
+            drawOutline(canvas);
+            drawDrawableAtCenter(canvas, iconErrorDrawable);
         }
     }
 
@@ -103,7 +111,7 @@ public class ThumbPlayerView extends View {
     }
 
     private void drawAnimatingOutline(Canvas canvas) {
-        int arcAngle =10; //30 degrees
+        int arcAngle = 10; //30 degrees
         float delta = (float) (0.05 * height);
         finishedOuterRect.set(delta,
                 delta,
@@ -211,6 +219,9 @@ public class ThumbPlayerView extends View {
                 stopProgressAnimation();
                 break;
             case STATE_STOPPED:
+                stopProgressAnimation();
+                break;
+            case STATE_ERROR:
                 stopProgressAnimation();
                 break;
         }

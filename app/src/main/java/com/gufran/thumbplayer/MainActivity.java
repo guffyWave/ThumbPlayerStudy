@@ -16,6 +16,7 @@ public class MainActivity extends AppCompatActivity {
     ThumbPlayerView thumbPlayerView, thumbPlayerView2;
     String url1 = "https://sampleswap.org/samples-ghost/MELODIC%20SAMPLES%20and%20LOOPS/GUITARS%20etcetera/969[kb]anthem-5ths.aif.mp3";
     String url2 = "https://sampleswap.org/samples-ghost/MELODIC%20SAMPLES%20and%20LOOPS/guitar%20acoustic%20picking/2070[kb]120_acoustic-guitar-picking2.aif.mp3";
+    String errorURL = "http://mdev.broex.net/media/audio%20/ZmQ5MWRlMTUtOWQwMi00MmIyLWMyYmMtYzdjY2FlODU4MmYxLm1wMw.mp3";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,8 +59,10 @@ public class MainActivity extends AppCompatActivity {
             } else if (playerUpdateEvent.action.equals(PlayerService.BROADCAST_ACTION_PLAYING)) {
                 thumbPlayerView.setState(ThumbPlayerView.STATE_PLAYING);
                 thumbPlayerView.setProgress(playerUpdateEvent.progress);
-            } else {
+            } else if (playerUpdateEvent.action.equals(PlayerService.BROADCAST_ACTION_STOPPED)) {
                 thumbPlayerView.setState(ThumbPlayerView.STATE_STOPPED);
+            } else {
+                thumbPlayerView.setState(ThumbPlayerView.STATE_ERROR);
             }
         }
 
@@ -70,8 +73,10 @@ public class MainActivity extends AppCompatActivity {
             } else if (playerUpdateEvent.action.equals(PlayerService.BROADCAST_ACTION_PLAYING)) {
                 thumbPlayerView2.setState(ThumbPlayerView.STATE_PLAYING);
                 thumbPlayerView2.setProgress(playerUpdateEvent.progress);
-            } else {
+            } else if (playerUpdateEvent.action.equals(PlayerService.BROADCAST_ACTION_STOPPED)) {
                 thumbPlayerView2.setState(ThumbPlayerView.STATE_STOPPED);
+            } else {
+                thumbPlayerView2.setState(ThumbPlayerView.STATE_ERROR);
             }
         }
 

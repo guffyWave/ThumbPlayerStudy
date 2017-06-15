@@ -7,5 +7,6 @@
         <attr name="progress" format="integer" />
         <attr name="icon_play" format="integer" />
         <attr name="icon_stop" format="integer" />
+        <attr name="icon_error" format="integer" />
     </declare-styleable>
 </resources>
