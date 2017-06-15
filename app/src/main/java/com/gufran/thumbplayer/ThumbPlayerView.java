@@ -43,7 +43,7 @@ public class ThumbPlayerView extends View {
     private int animatingProgress = 0;
     private Handler animatingProgressHandler;
     private Runnable animatingProgressRunnable;
-    private int ANIMATION_PROGRESS_DELAY = 35;
+    private int ANIMATION_PROGRESS_DELAY = 20;
 
 
     public ThumbPlayerView(Context context) {
@@ -103,7 +103,7 @@ public class ThumbPlayerView extends View {
     }
 
     private void drawAnimatingOutline(Canvas canvas) {
-        int arcAngle = 0; //30 degrees
+        int arcAngle =10; //30 degrees
         float delta = (float) (0.05 * height);
         finishedOuterRect.set(delta,
                 delta,
@@ -115,7 +115,9 @@ public class ThumbPlayerView extends View {
                 height - delta);
 
         canvas.drawArc(unfinishedOuterRect, 0, 360, false, unfinishedPaint);
-        canvas.drawArc(finishedOuterRect, animatingProgress, arcAngle + animatingProgress, false, finishedPaint);
+        int startAngle = animatingProgress + arcAngle;
+        int endAngle = animatingProgress + arcAngle;
+        canvas.drawArc(finishedOuterRect, startAngle, endAngle, false, finishedPaint);
     }
 
     private void drawDrawableAtCenter(Canvas canvas, Drawable drawable) {
@@ -176,16 +178,14 @@ public class ThumbPlayerView extends View {
         unfinishedPaint.setAntiAlias(true);
     }
 
-    public void startProgressAnimation() {
-
+    private void startProgressAnimation() {
         animatingProgressHandler = new Handler();
         animatingProgressRunnable = new Runnable() {
             @Override
             public void run() {
                 if (animatingProgress >= 360)
                     animatingProgress = 0;
-
-                animatingProgress += 5;
+                animatingProgress += 3;
                 animatingProgressHandler.postDelayed(this, ANIMATION_PROGRESS_DELAY);
                 invalidate();
             }

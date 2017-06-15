@@ -164,7 +164,7 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
         mState = PlayerService.State.Stopped;
         relaxResources(true);// release everything except MediaPlayer
 
-        System.out.println(stoppedURL);
+        //System.out.println(stoppedURL);
 
         ThumbPlayerApp.eventBus.post(new PlayerUpdateEvent(BROADCAST_ACTION_STOPPED
                 , 0, stoppedURL));
