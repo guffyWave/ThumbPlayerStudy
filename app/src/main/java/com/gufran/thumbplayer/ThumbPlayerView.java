@@ -10,6 +10,7 @@ import android.icu.text.RuleBasedCollator;
 import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.View;
 
 /**
@@ -30,16 +31,14 @@ public class ThumbPlayerView extends View {
     private int height, width;
     private int progress = 0;
     private int max = 100;
-    private Drawable iconPlayDrawable, iconStopDrawable,iconErrorDrawable;
+    private Drawable iconPlayDrawable, iconStopDrawable, iconErrorDrawable;
 
     public static final int STATE_PREPARING = 0;
     public static final int STATE_PLAYING = 1;
     public static final int STATE_STOPPED = 2;
     public static final int STATE_ERROR = 3;
 
-
     public int state = STATE_STOPPED;
-
 
     ///loading progress
     private int animatingProgress = 0;
@@ -68,7 +67,7 @@ public class ThumbPlayerView extends View {
                 .getDrawable(R.styleable.ThumbPlayerView_icon_play);
         iconStopDrawable = typedArray
                 .getDrawable(R.styleable.ThumbPlayerView_icon_stop);
-        iconErrorDrawable= typedArray
+        iconErrorDrawable = typedArray
                 .getDrawable(R.styleable.ThumbPlayerView_icon_error);
         strokeWidth = typedArray.getDimensionPixelSize(R.styleable.ThumbPlayerView_strokeWidth, 10);
         setMax(100);
@@ -89,7 +88,7 @@ public class ThumbPlayerView extends View {
             setProgress(0);
             drawOutline(canvas);
             drawDrawableAtCenter(canvas, iconPlayDrawable);
-        }else{
+        } else {
             setProgress(0);
             drawOutline(canvas);
             drawDrawableAtCenter(canvas, iconErrorDrawable);
@@ -111,7 +110,7 @@ public class ThumbPlayerView extends View {
     }
 
     private void drawAnimatingOutline(Canvas canvas) {
-        int arcAngle = 10; //30 degrees
+        int sweepAngle = 40;
         float delta = (float) (0.05 * height);
         finishedOuterRect.set(delta,
                 delta,
@@ -123,9 +122,9 @@ public class ThumbPlayerView extends View {
                 height - delta);
 
         canvas.drawArc(unfinishedOuterRect, 0, 360, false, unfinishedPaint);
-        int startAngle = animatingProgress + arcAngle;
-        int endAngle = animatingProgress + arcAngle;
-        canvas.drawArc(finishedOuterRect, startAngle, endAngle, false, finishedPaint);
+        int startAngle = animatingProgress;
+        canvas.drawArc(finishedOuterRect, startAngle, sweepAngle, false, finishedPaint);
+
     }
 
     private void drawDrawableAtCenter(Canvas canvas, Drawable drawable) {
@@ -193,7 +192,7 @@ public class ThumbPlayerView extends View {
             public void run() {
                 if (animatingProgress >= 360)
                     animatingProgress = 0;
-                animatingProgress += 3;
+                animatingProgress = animatingProgress + 10;
                 animatingProgressHandler.postDelayed(this, ANIMATION_PROGRESS_DELAY);
                 invalidate();
             }
