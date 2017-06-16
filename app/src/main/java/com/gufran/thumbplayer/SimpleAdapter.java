@@ -9,6 +9,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.gufran.thumbplayer.entity.PlayerItem;
 import com.gufran.thumbplayer.event.PlayerUpdateEvent;
 import com.squareup.otto.Subscribe;
 
@@ -25,13 +26,12 @@ import java.util.ArrayList;
 public class SimpleAdapter extends RecyclerView.Adapter<SimpleAdapter.ItemHolder> {
     Context context;
     private LayoutInflater layoutInflater;
-    ArrayList<String> dataList;
+    ArrayList<PlayerItem> dataList;
 
-    public SimpleAdapter(Context context, ArrayList<String> dataList) {
+    public SimpleAdapter(Context context, ArrayList<PlayerItem> dataList) {
         layoutInflater = LayoutInflater.from(context);
         this.dataList = dataList;
         this.context = context;
-        ThumbPlayerApp.eventBus.register(context);
     }
 
     @Override
@@ -42,33 +42,36 @@ public class SimpleAdapter extends RecyclerView.Adapter<SimpleAdapter.ItemHolder
 
     @Override
     public void onBindViewHolder(SimpleAdapter.ItemHolder holder, final int position) {
-        holder.textItemName.setText(dataList.get(position));
+        final PlayerItem playerItem = dataList.get(position);
+        holder.textItemName.setText(playerItem.name);
         holder.thumbPlayerView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent i = new Intent(context, PlayerService.class);
                 i.setAction(PlayerService.ACTION_TOGGLE_PLAYBACK);
-                Uri uri = Uri.parse(dataList.get(position));
+                Uri uri = Uri.parse(playerItem.mediaURL);
                 i.setData(uri);
                 i.putExtra("POSITION", position);
                 context.startService(i);
             }
         });
-    }
 
-    @Subscribe
-    public void playerUpdate(PlayerUpdateEvent playerUpdateEvent) {
-        if (playerUpdateEvent.action.equals(PlayerService.BROADCAST_ACTION_PREPARING)) {
-            thumbPlayerView.setState(ThumbPlayerView.STATE_PREPARING);
-        } else if (playerUpdateEvent.action.equals(PlayerService.BROADCAST_ACTION_PLAYING)) {
-            thumbPlayerView.setState(ThumbPlayerView.STATE_PLAYING);
-            thumbPlayerView.setProgress(playerUpdateEvent.progress);
-        } else if (playerUpdateEvent.action.equals(PlayerService.BROADCAST_ACTION_STOPPED)) {
-            thumbPlayerView.setState(ThumbPlayerView.STATE_STOPPED);
+        if (playerItem.state == ThumbPlayerView.STATE_STOPPED) {
+            holder.thumbPlayerView.setState(ThumbPlayerView.STATE_STOPPED);
+            holder.thumbPlayerView.setClickable(true);
+        } else if (playerItem.state == ThumbPlayerView.STATE_PLAYING) {
+            holder.thumbPlayerView.setState(ThumbPlayerView.STATE_PLAYING);
+            holder.thumbPlayerView.setProgress(playerItem.progress);
+            holder.thumbPlayerView.setClickable(true);
+        } else if (playerItem.state == ThumbPlayerView.STATE_PREPARING) {
+            holder.thumbPlayerView.setState(ThumbPlayerView.STATE_PREPARING);
+            holder.thumbPlayerView.setClickable(false);
         } else {
-            thumbPlayerView.setState(ThumbPlayerView.STATE_ERROR);
+            holder.thumbPlayerView.setState(ThumbPlayerView.STATE_ERROR);
+            holder.thumbPlayerView.setClickable(true);
         }
     }
+
 
     @Override
     public int getItemCount() {
